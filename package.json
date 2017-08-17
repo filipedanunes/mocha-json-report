@@ -1,5 +1,5 @@
 {
-  "name": "mocha-json-report",
+  "name": "mocha-json-reporter",
   "version": "1.0.0-0",
   "description": "A Simple Mocha JSON Report",
   "main": "./src/index.js",
