@@ -1,6 +1,6 @@
 {
   "name": "mocha-json-report",
-  "version": "0.0.0",
+  "version": "1.0.0-0",
   "description": "A Simple Mocha JSON Report",
   "main": "./src/index.js",
   "scripts": {
