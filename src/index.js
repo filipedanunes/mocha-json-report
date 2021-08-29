@@ -1,11 +1,11 @@
-const mocha = require('mocha');
-const fs = require('fs');
-const path = require('path');
+const mocha = require("mocha");
+const fs = require("fs");
+const path = require("path");
 
 const createFolderStructure = (fullPath) => {
   const paths = fullPath.split(path.normalize(path.sep));
 
-  let currentPath = '';
+  let currentPath = "";
 
   paths.forEach((part) => {
     currentPath = path.join(currentPath, part);
@@ -28,116 +28,60 @@ const removeParent = (tree) => {
 };
 
 const saveFile = (fullPath, fileName, json) => {
-  fs.writeFileSync(
-    path.join(fullPath, fileName),
-    JSON.stringify(json)
-  );
+  fs.writeFileSync(path.join(fullPath, fileName), JSON.stringify(json));
 };
 
 function JsonReporter(runner) {
   mocha.reporters.Base.call(this, runner);
 
   const jsonResult = {
-    children: [],
-    parent: undefined
+    info: {},
+    tests: [],
   };
 
   let current;
-  let testId = 1;
-  let suiteId = 1;
 
-  runner.on('suite', (suite) => {
+  runner.on("suite", (suite) => {
     if (suite.root) {
-      jsonResult.description = 'suite execution';
+      jsonResult.info.summary = "New Release Execution";
+      jsonResult.info.description = "This execution triggered by release mr";
       current = jsonResult;
-    } else {
-      const node = {
-        id: `suite${suiteId}`,
-        description: suite.title,
-        fullName: suite.fullTitle(),
-        failedExpectations: [],
-        children: [],
-        parent: current
-      };
-
-      suiteId += 1;
-      current.children.push(node);
-      current = node;
     }
   });
 
-  runner.on('suite end', () => {
-    current = current.parent;
-  });
-
-  runner.on('pass', (test) => {
+  runner.on("pass", (test) => {
     const node = {
-      id: `spec${testId}`,
-      description: test.title,
-      fullName: current.fullName ? `${current.fullName} ${test.title}` : test.title,
-      passedExpectations: [
-        {
-          matcherName: test.body,
-          message: 'Passed.',
-          stack: '',
-          passed: true
-        }
-      ],
-      pendingReason: '',
-      status: 'passed'
+      testKey: `${test.title}`.match(/\[(.+)\]/)[1],
+      start: `${new Date().toISOString()}`,
+      finish: `${new Date().toISOString()}`,
+      comment: "No Comments",
+      status: "PASSED",
     };
 
-    testId += 1;
-    current.children.push(node);
+    current.tests.push(node);
   });
 
-  runner.on('fail', (test, err) => {
+  runner.on("fail", (test, err) => {
     const node = {
-      id: `spec${testId}`,
-      description: test.title,
-      fullName: test.fullTitle(),
-      failedExpectations: [
-        {
-          matcherName: err.name,
-          message: err.message,
-          stack: err.stack,
-          passed: false,
-          expected: err.expected,
-          actual: err.actual
-        }
-      ],
-      passedExpectations: [],
-      pendingReason: '',
-      status: 'failed'
+      testKey: `${test.title}`.match(/\[(.+)\]/)[1],
+      start: `${new Date().toISOString()}`,
+      finish: `${new Date().toISOString()}`,
+      comment: "No Comments",
+      status: "FAILED",
     };
 
-    testId += 1;
-    current.children.push(node);
+    current.tests.push(node);
   });
 
-  runner.on('test end', (test) => {
-    if (test.pending) {
-      const node = {
-        id: `spec${testId}`,
-        description: test.title,
-        fullName: test.fullTitle(),
-        failedExpectations: [],
-        passedExpectations: [],
-        pendingReason: '',
-        status: 'pending',
-        children: []
-      };
-
-      testId += 1;
-      current.children.push(node);
-    }
-  });
-
-  runner.on('end', () => {
+  runner.on("end", () => {
     removeParent(jsonResult);
 
-    const reportPath = process.env.MOCHAJSONREPORT_PATH ? process.env.MOCHAJSONREPORT_PATH : 'report/json';
-    const fileName = process.env.MOCHAJSONREPORT_FILENAME ? process.env.MOCHAJSONREPORT_FILENAME : 'result.json';
+    const reportPath = process.env.MOCHAJSONREPORT_PATH
+      ? process.env.MOCHAJSONREPORT_PATH
+      : "./cypress/results/xray/";
+    const fileName = process.env.MOCHAJSONREPORT_FILENAME
+      ? process.env.MOCHAJSONREPORT_FILENAME
+      : "e2eResults.json";
 
     createFolderStructure(reportPath);
     saveFile(reportPath, fileName, jsonResult);
